@@ -3,6 +3,7 @@ from typing import List, Optional
 import pandas as pd
 import numpy as np
 
+
 # ============================
 # 1. Modèle des réponses du questionnaire
 # ============================
@@ -148,7 +149,23 @@ def filter_recipes_with_questionnaire(df: pd.DataFrame, q: QuestionnaireAnswers)
     if "Gluten-free" in q.Q5 and "Contains_Gluten" in recipes.columns:
         recipes = recipes[recipes["Contains_Gluten"] == 0]
 
-    # --- Allergies (booléens) ---
+    # (optionnel si un jour vous ajoutez ces choix textuels dans Q5)
+    if "No nuts" in q.Q5 and "Contains_Nuts" in recipes.columns:
+        recipes = recipes[recipes["Contains_Nuts"] == 0]
+
+    if "No dairy" in q.Q5 and "Contains_Dairy" in recipes.columns:
+        recipes = recipes[recipes["Contains_Dairy"] == 0]
+
+    if "No egg" in q.Q5 and "Contains_Egg" in recipes.columns:
+        recipes = recipes[recipes["Contains_Egg"] == 0]
+
+    if "No fish" in q.Q5 and "Contains_Fish" in recipes.columns:
+        recipes = recipes[recipes["Contains_Fish"] == 0]
+
+    if "No soy" in q.Q5 and "Contains_Soy" in recipes.columns:
+        recipes = recipes[recipes["Contains_Soy"] == 0]
+
+    # --- Allergies (booléens venant du questionnaire) ---
     if q.Allergie_Nuts and "Contains_Nuts" in recipes.columns:
         recipes = recipes[recipes["Contains_Nuts"] == 0]
 
@@ -231,13 +248,14 @@ def select_15_recipes_from_questionnaire(
     n_display: int = 15,
     pool_size: int = 100,
     random_state: int = 42
-) -> pd.DataFrame:
+):
     """
     1) Filtre les recettes avec les réponses du questionnaire
     2) Calcule un score qualité + nutrition
     3) Trie par score_total
     4) Garde un pool (Top pool_size)
     5) Tire n_display recettes au hasard dans ce pool
+    6) Retourne UNIQUEMENT la liste des RecipeId recommandés
     """
 
     filtered = filter_recipes_with_questionnaire(recipes_df, q)
@@ -254,46 +272,7 @@ def select_15_recipes_from_questionnaire(
 
     selected = pool.sample(n=n_to_sample, random_state=random_state)
 
-    cols_for_front = [
-        "RecipeId",
-        "Name",
-        "Images",
-        "TotalTime_min",
-        "AggregatedRating",
-        "ReviewCount",
-        "Calories",
-        "ProteinContent",
-        "Is_Vegan",
-        "Is_Vegetarian",
-        "Is_Breakfast_Brunch",
-        "Is_Dessert",
-        "Calorie_Category",
-        "Protein_Category",
-        "score_total"
-    ]
-    cols_for_front = [c for c in cols_for_front if c in selected.columns]
+    # 👉 On renvoie uniquement les 15 RecipeId
+    recipe_ids = selected["RecipeId"].tolist()
 
-    return selected[cols_for_front]
-
-
-
-
-if __name__ == "__main__":
-    df = pd.read_csv("cleaned_and_labeled_recipes.csv")
-
-    q = QuestionnaireAnswers(
-        Q1=["Main course", "Dessert"],
-        Q2="Less than 30 min",
-        Q3_Calories="Low",
-        Q3_Protein="High",
-        Q5=["No pork", "No alcohol"],
-        Allergie_Nuts=True,
-        Allergie_Dairy=False,
-        Allergie_Egg=False,
-        Allergie_Fish=False,
-        Allergie_Soy=False,
-    )
-
-    selected = select_15_recipes_from_questionnaire(df, q)
-    print(selected.head())
-
+    return recipe_ids

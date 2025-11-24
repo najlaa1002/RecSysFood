@@ -1,0 +1,10 @@
+import pandas as pd
+from filtre_recommandation import QuestionnaireAnswers, select_15_recipes_from_questionnaire
+
+df = pd.read_csv("cleaned_and_labeled_recipes.csv")
+
+def get_recommendations(input_json):
+
+    q = QuestionnaireAnswers(**input_json)
+
+    return select_15_recipes_from_questionnaire(df, q)
